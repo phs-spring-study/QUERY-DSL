@@ -1,3 +1,6 @@
+package study.querydsl;
+
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +21,8 @@ import static study.querydsl.entity.QMember.*;
 public class QuerydslBasicTest {
 	@PersistenceContext
 	EntityManager em;
+
+	JPAQueryFactory queryFactory;
 	@BeforeEach
 	public void before() {
 		Team teamA = new Team("teamA");
@@ -32,5 +37,30 @@ public class QuerydslBasicTest {
 		em.persist(member2);
 		em.persist(member3);
 		em.persist(member4);
+	}
+
+	@Test
+	public void paging1() {
+		List<Member> result = queryFactory
+				.selectFrom(member)
+				.orderBy(member.username.desc())
+				.offset(1) //0부터 시작(zero index)
+				.limit(2) //최대 2건 조회
+				.fetch();
+		assertThat(result.size()).isEqualTo(2);
+	}
+
+	@Test
+	public void paging2() {
+		QueryResults<Member> queryResults = queryFactory
+				.selectFrom(member)
+				.orderBy(member.username.desc())
+				.offset(1)
+				.limit(2)
+				.fetchResults();
+		assertThat(queryResults.getTotal()).isEqualTo(4);
+		assertThat(queryResults.getLimit()).isEqualTo(2);
+		assertThat(queryResults.getOffset()).isEqualTo(1);
+		assertThat(queryResults.getResults().size()).isEqualTo(2);
 	}
 }
