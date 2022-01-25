@@ -11,6 +11,7 @@ spring:
       hibernate:
         # show_sql: true
         format_sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
 
 logging.level:
   org.hibernate.SQL: debug
