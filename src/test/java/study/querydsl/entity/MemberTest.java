@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 @SpringBootTest
@@ -91,5 +92,28 @@ public class MemberTest {
         assertThat(result1.size()).isEqualTo(1);
     }
 
+    @Test
+    public void resultFetch() {
+        //List
+        List<Member> fetch = queryFactory
+            .selectFrom(member)
+            .fetch();
+        //단 건
+        Member findMember1 = queryFactory
+            .selectFrom(member)
+            .fetchOne();
+        //처음 한 건 조회
+        Member findMember2 = queryFactory
+            .selectFrom(member)
+            .fetchFirst();
+        //페이징에서 사용
+        QueryResults<Member> results = queryFactory
+            .selectFrom(member)
+            .fetchResults();
+        //count 쿼리로 변경
+        long count = queryFactory
+            .selectFrom(member)
+            .fetchCount();
+    }
 
 }
