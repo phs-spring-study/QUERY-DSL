@@ -19,6 +19,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 public class MemberTest {
     @PersistenceContext
     EntityManager em;
+
+    JPAQueryFactory queryFactory;
+
     @Test
 
     public void testEntity() {
@@ -60,7 +63,6 @@ public class MemberTest {
     @Test
     public void startQuerydsl() {
         //member1을 찾아라.
-        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
         Member findMember = queryFactory
             .select(member)
             .from(member)
@@ -68,4 +70,26 @@ public class MemberTest {
             .fetchOne();
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
+
+    @Test
+    public void search() {
+        Member findMember = queryFactory
+            .selectFrom(member)
+            .where(member.username.eq("member1")
+                .and(member.age.eq(10)))
+            .fetchOne();
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void searchAndParam() {
+        List<Member> result1 = queryFactory
+            .selectFrom(member)
+            .where(member.username.eq("member1"),
+                member.age.eq(10))
+            .fetch();
+        assertThat(result1.size()).isEqualTo(1);
+    }
+
+
 }
