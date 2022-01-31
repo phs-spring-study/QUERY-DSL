@@ -543,38 +543,32 @@ public void theta_join() {
 - from 절에 여러 엔티티를 선택해서 세타 조인 한다.
 - 외부 조인이 불가능 함. 근데 세타조인을 하면서 외부조인을 하고 싶은 경우가 생길 수 있음. ⇒ 다음에 설명할 조인 on을 사용하면 외부 조인이 가능함. (하이버네이트 최신버전에서 지원)
 
-# --- 
-
 # 8. 조인 - on절
 
 - ON절을 활용한 조인(JPA 2.1부터 지원)
-    1. 조인 대상 필터링
-    2. 연관관계 없는 엔티티 외부 조인
-    
+  1. 조인 대상 필터링
+  2. 연관관계 없는 엔티티 외부 조인
 
 ### 1. 조인 대상 필터링
 
 ex ) 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회하는 경우
 
-⇒ 
-
 ```java
 /**
-* 예) 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회
-   * JPQL: SELECT m, t FROM Member m LEFT JOIN m.team t on t.name = 'teamA'
-   * SQL: SELECT m.*, t.* FROM Member m LEFT JOIN Team t ON m.TEAM_ID=t.id and
-  t.name='teamA'
-*/
+ * 예) 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회
+ * JPQL: select m, t from Member m left join m.team t on t.name = 'teamA'
+ */
 @Test
-public void join_on_filtering() throws Exception {
+public void join_on_filtering() {
     List<Tuple> result = queryFactory
             .select(member, team)
             .from(member)
             .leftJoin(member.team, team).on(team.name.eq("teamA"))
             .fetch();
+
     for (Tuple tuple : result) {
         System.out.println("tuple = " + tuple);
-		} 
+    }
 }
 ```
 
@@ -585,75 +579,127 @@ t=[Member(id=5, username=member3, age=30), null]
 t=[Member(id=6, username=member4, age=40), null]
 ```
 
+![Untitled 11](https://user-images.githubusercontent.com/52458039/151833906-6b0365b5-80f6-49c0-92b3-bcfd68a58241.png)
+
+![Untitled 12](https://user-images.githubusercontent.com/52458039/151833955-ecc01c32-c1cb-4ad7-b9bb-2a039b5fa744.png)
+
+member1, 2는 teamA소속이므로 팀 내용을 다 가져오고, member 3, 4는 teamB소속이지만 left join이므로 팀이 null인 상태로 조회된다.
+
+```java
+@Test
+public void join_on_filtering() {
+    List<Tuple> result = queryFactory
+            .select(member, team)
+            .from(member)
+            .join(member.team, team).on(team.name.eq("teamA"))
+            .fetch();
+
+    for (Tuple tuple : result) {
+        System.out.println("tuple = " + tuple);
+    }
+}
+```
+
+다음과 같이 내부 조인을 하게 되면
+
+![Untitled 13](https://user-images.githubusercontent.com/52458039/151833996-e923f13a-8589-47c3-af43-a357aa0ee0bc.png)
+
+![Untitled 14](https://user-images.githubusercontent.com/52458039/151834029-4332df4c-0e36-4ffd-b110-ef044f76dedb.png)
+
+inner join을 해서 teamB 속속 멤버들은 조회되지 않는다.
+
 > 참고 : on 절을 활용해 조인 대상을 필터링 할 때, 외부조인이 아니라 내부조인(inner join)을 사용하면, where  절에서 필터링 하는 것과 기능이 동일하다. 따라서 on 절을 활용한 조인 대상 필터링을 사용할 때, 내부조인 이면 익숙한 where 절로 해결하고, 정말 외부조인이 필요한 경우에만 이 기능을 사용하자.
-> 
+
+```java
+@Test
+public void join_on_filtering() {
+    List<Tuple> result = queryFactory
+            .select(member, team)
+            .from(member)
+            .join(member.team, team)
+            .where(team.name.eq("teamA"))
+            .fetch();
+
+    for (Tuple tuple : result) {
+        System.out.println("tuple = " + tuple);
+    }
+}
+```
+
+내부조인을 쓸거면 on절을 이용하기 보다는 익숙한 where절로 사용하면 된다.
 
 ### 2. 연관관계 없는 엔티티 외부 조인
 
 예) 회원의 이름과 팀의 이름이 같은 대상 **외부 조인**
 
+from절에서 세타 조인일때는 left join이 안됨. 그래서 아래와 같이 leftJoin을 사용해야 함.
+
 ```java
 /**
-*2. 연관관계 없는 엔티티 외부 조인
-*예)회원의 이름과 팀의 이름이 같은 대상 외부 조인
-* JPQL: SELECT m, t FROM Member m LEFT JOIN Team t on m.username = t.name
-* SQL: SELECT m.*, t.* FROM Member m LEFT JOIN Team t ON m.username = t.name */
+ * 2. 연관관계 없는 엔티티 외부 조인
+ * 예)회원의 이름과 팀의 이름이 같은 대상 외부 조인
+ * JPQL: SELECT m, t FROM Member m LEFT JOIN Team t on m.username = t.name
+ * SQL: SELECT m.*, t.* FROM Member m LEFT JOIN Team t ON m.username = t.name */
 @Test
-public void join_on_no_relation() throws Exception {
+public void join_on_no_relation() {
     em.persist(new Member("teamA"));
     em.persist(new Member("teamB"));
+    em.persist(new Member("teamC"));
+
     List<Tuple> result = queryFactory
             .select(member, team)
             .from(member)
-            .leftJoin(team).on(member.username.eq(team.name))
+            .leftJoin(team) // leftJoin에 team만 넣으면 on절의 조건에 따른 매칭만 이루어 짐 (세타조인 + left join이 가능)
+            .on(member.username.eq(team.name))
             .fetch();
+
     for (Tuple tuple : result) {
-        System.out.println("t=" + tuple);
-		} 
+        System.out.println("tuple = " + tuple);
+    }
 }
 ```
 
-```java
-t=[Member(id=3, username=member1, age=10), null]
-t=[Member(id=4, username=member2, age=20), null]
-t=[Member(id=5, username=member3, age=30), null]
-t=[Member(id=6, username=member4, age=40), null]
-t=[Member(id=7, username=teamA, age=0), Team(id=1, name=teamA)]
-t=[Member(id=8, username=teamB, age=0), Team(id=2, name=teamB)]
-```
+![Untitled 15](https://user-images.githubusercontent.com/52458039/151834078-dbc23eed-cdd8-403e-8979-da8fd545c3f8.png)
+
+세타조인 + leftJoin이기 때문에 on 조건에 맞지 않는 값들도 조회해 온다.
 
 - 하이버네이트 5.1부터 `on` 을 사용해서 서로 관계가 없는 필드로 외부 조인하는 기능이 추가되었다. 물론 내부 조인도 가능하다.
 - 주의! 문법을 잘 봐야 한다. **leftJoin()** 부분에 일반 조인과 다르게 엔티티 하나만 들어간다.
-    - 일반조인: `leftJoin(member.team, team)`
-        - on조인: `from(member).leftJoin(team).on(xxx)`
+  - 일반조인: `leftJoin(member.team, team)`
+    - on조인: `from(member).leftJoin(team).on(xxx)`
 
 # 9. 조인 - 페치 조인
 
 페치 조인은 SQL에서 제공하는 기능은 아니다. SQL조인을 활용해서 연관된 엔티티를 SQL 한번에
 
-조회하는 기능이다. 주로 성능 최적화에 사용하는 방법이다.
+조회하는 기능이다. **주로 성능 최적화에 사용하는 방법이다.**
 
 **페치 조인 미적용**
 
-지연로딩으로 Member, Team SQL 쿼리 각각 실행
+지연로딩으로 Member, Team SQL 쿼리 각각 실행한다.
 
 ```java
-	@PersistenceUnit
-  EntityManagerFactory emf;
+@PersistenceUnit
+EntityManagerFactory emf;
   
 @Test
-public void fetchJoinNo() throws Exception {
+public void fetchJoinNo() {
     em.flush();
     em.clear();
+
     Member findMember = queryFactory
-            .selectFrom(member)
-            .where(member.username.eq("member1"))
+            .selectFrom(QMember.member)
+            .where(QMember.member.username.eq("member1"))
             .fetchOne();
-    boolean loaded =
-	  emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
-		assertThat(loaded).as("페치 조인 미적용").isFalse(); 
+
+    boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+    assertThat(loaded).as("페치 조인 미적용").isFalse();
 }
 ```
+
+멤버만 조회해온 뒤, team을 추가로 조회해 올때 로딩이 됬냐 안됬냐를 판단하기 위해 EntityManagerFactory의 getPersistenceUnitUtiil의 isLoaded 메서드를 이용하여 영속성 컨텍스트에 로딩이 됬는지 확인할 수 있다.
+
+> 참고 : fetch join test시에는 영속성 컨텍스트를 깔끔하게 먼저 날려주고 테스트 하는게 좋다.
 
 **페치 조인 적용**
 
@@ -675,7 +721,11 @@ public void fetchJoinUse() throws Exception {
 }
 ```
 
-사용방법
+![Untitled 16](https://user-images.githubusercontent.com/52458039/151834118-1a4924c2-a4ab-4ff7-ad95-2fb45b519499.png)
+
+fetch join으로 인해 팀을 미리 조회해오게 된다.
+
+**사용방법**
 
 - join(), leftJoin() 등 조인 기능 뒤에 fetchJoin() 이라고 추가하면 된다.
 
@@ -703,14 +753,20 @@ public void subQuery() throws Exception {
 }
 ```
 
+![Untitled 17](https://user-images.githubusercontent.com/52458039/151834158-b4c25c08-be43-4ae2-bc88-18b5e1461660.png)
+
+alias가 중복되면 안되므로 memberSub를 새롭게 정의하고 서브쿼리를 사용해야 한다.
+
+`JPAExpressions.select(memberSub.age.max()).from(memberSub)` 결과가 40이므로 최대 나이에 대한 멤버만 조회해 오게 된다.
+
 ### 서브 쿼리 goe 사용
 
 ```java
 /**
-	*나이가 평균 나이 이상인 회원
-	*/
+ * 나이가 평균 이상인 회원
+ */
 @Test
-public void subQueryGoe() throws Exception {
+public void subQueryGoe() {
     QMember memberSub = new QMember("memberSub");
     List<Member> result = queryFactory
             .selectFrom(member)
@@ -718,19 +774,26 @@ public void subQueryGoe() throws Exception {
                     JPAExpressions
                             .select(memberSub.age.avg())
                             .from(memberSub)
-		)).fetch();
-    assertThat(result).extracting("age").containsExactly(30,40);
- }
+            ))
+            .fetch();
+
+    assertThat(result).extracting("age")
+            .containsExactly(40);
+}
 ```
+
+![Untitled 18](https://user-images.githubusercontent.com/52458039/151834199-ec8d3339-63ce-49eb-9a26-3b4e33f68667.png)
+
+비슷한 방식으로 avg와 goe를 사용하면 해당쿼리로 쉽게 조건에 맞게 조회해올 수 있다.
 
 ### 서브쿼리 여러 건 처리 in 사용
 
 ```java
 /**
-	* 서브쿼리 여러 건 처리, in 사용
-	*/
+ * 나이가 10 초과인 회원
+ */
 @Test
-public void subQueryIn() throws Exception {
+public void subQueryIn() {
     QMember memberSub = new QMember("memberSub");
     List<Member> result = queryFactory
             .selectFrom(member)
@@ -739,25 +802,60 @@ public void subQueryIn() throws Exception {
                             .select(memberSub.age)
                             .from(memberSub)
                             .where(memberSub.age.gt(10))
-		)) .fetch();
-    assertThat(result).extracting("age").containsExactly(20, 30, 40);
+            ))
+            .fetch();
+
+    assertThat(result).extracting("age")
+            .containsExactly(20, 30, 40);
 }
 ```
+
+![Untitled 19](https://user-images.githubusercontent.com/52458039/151834225-9210a501-ba83-4158-841d-a8a41f393049.png)
+
+다음과 같이 in 쿼리도 잘 적용된다.
 
 ### select 절에 subquery
 
 ```java
-List<Tuple> fetch = queryFactory
-          .select(member.username,
-                  JPAExpressions
-                          .select(memberSub.age.avg())
-                          .from(memberSub)
-          ).from(member)
-          .fetch();
-for (Tuple tuple : fetch) {
-    System.out.println("username = " + tuple.get(member.username));
-    System.out.println("age = " + 
-				tuple.get(JPAExpressions.select(memberSub.age.avg()).from(memberSub)));
+@Test
+public void selectSubQuery() {
+    QMember memberSub = new QMember("memberSub");
+
+    List<Tuple> result = queryFactory
+            .select(member.username,
+                    JPAExpressions
+                            .select(memberSub.age.avg())
+                            .from(memberSub))
+            .from(member)
+            .fetch();
+
+    for (Tuple tuple : result) {
+        System.out.println("tuple = " + tuple);
+    }
+}
+```
+
+![Untitled 20](https://user-images.githubusercontent.com/52458039/151834269-52a3013d-f248-432c-85ef-5e2ce6437722.png)
+
+select절에서 유저이름과 유저들의 평균들을 다 조회해오게 된다.
+
+JPAExpressions를 static import를 사용해서 아래와 같이 더 간편하게 짤 수도 있다.
+
+```java
+@Test
+public void selectSubQuery() {
+    QMember memberSub = new QMember("memberSub");
+
+    List<Tuple> result = queryFactory
+            .select(member.username,
+                    select(memberSub.age.avg())
+                            .from(memberSub))
+            .from(member)
+            .fetch();
+
+    for (Tuple tuple : result) {
+        System.out.println("tuple = " + tuple);
+    }
 }
 ```
 
@@ -773,55 +871,100 @@ JPA JPQL 서브쿼리의 한계점으로 from 절의 서브쿼리(인라인 뷰)
 
 서브쿼리 사용 예시 ⇒ [https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=pyj721aa&logNo=221466664622](https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=pyj721aa&logNo=221466664622)
 
+> from절에 서브 쿼리를 쓰는 이유가 굉장히 많은데, 안좋은 이유가 많다. 화면에 보여줄 데이터를 조회해 오기 위해 from절안에 from절이 계속 들어가는 경우가 많다. ⇒ SQL은 데이터를 가져오는데에 집중하고, 필요하면 어플리케이션에 로직을 돌려서 화면에 맞게 변환해야 한다. (화면에 맞추기 위해 쿼리를 억지로 복잡하게 짜기 보다는, 데이터를 최소화하여 where, grouping하여 가져오는 연습을 많이 해보면 복잡한 쿼리들을 많이 줄일 수 있다.
+
+> 실시간 트래픽이 정말 많은 서비스에서는 쿼리 하나하나가 영향을 크게 미친다. 이럴 때는 화면에 맞는 캐시를 엄청 많이 쓴다. 근데 만약 admin페이지를 만든다면 복잡하게 쿼리를 길게 짜서 한방 쿼리를 날리기 보다는 쿼리를 2~3번 나눠서 날리는게 훨씬 효과적일 수 있다. ⇒ sql은 집합적으로 사고하여 쿼리를 짜야하므로 복잡한데, 애플리케이션 로직은 sequential하게 로직을 순차적으로 만들어서 풀 수 있다. → ( sql - antipatterns 책 참고 : [http://www.yes24.com/Product/Goods/5269099](http://www.yes24.com/Product/Goods/5269099) : 정말 복잡한 수천줄의 쿼리는 쪼개서 몇백줄씩 줄여서 날릴 수 있다.)
+
 # 11. Case 문
 
-**select, 조건절(where), order by에서 사용 가능**
+**select, 조건절(where), order by에서 사용 가능하다.**
 
 **단순한 조건 (when, then 사용)**
 
 ```java
-List<String> result = queryFactory
-	.select(member.age .when(10).then("열살")
-	.when(20).then("스무살")
-	.otherwise("기타")) .from(member)
-	.fetch();
+@Test
+public void basicCase() {
+    List<String> result = queryFactory
+            .select(member.age
+                    .when(10).then("열살")
+                    .when(20).then("스무살")
+                    .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+    for (String s : result) {
+        System.out.println("s = " + s);
+    }
+}
 ```
+
+![Untitled 21](https://user-images.githubusercontent.com/52458039/151834297-8643362d-e95d-4386-8755-24e10aee40f3.png)
 
 **복잡한 조건 (CaseBuilder 사용)**
 
 ```java
-List<String> result = queryFactory
-             .select(new CaseBuilder()
-								 .when(member.age.between(0, 20)).then("0~20살") 
-								 .when(member.age.between(21, 30)).then("21~30살") 
-								 .otherwise("기타"))
-             .from(member)
-             .fetch();
+@Test
+public void complexCase() {
+    List<String> result = queryFactory
+            .select(new CaseBuilder()
+                    .when(member.age.between(0, 20)).then("0~20살")
+                    .when(member.age.between(21, 30)).then("21~30살")
+                    .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+    for (String s : result) {
+        System.out.println("s = " + s);
+    }
+}
 ```
 
-⇒ 복잡한 조건을 가진 쿼리로 디비를 검색하면 안된다. 최소한의 필터링을 통해 가져온 데이터를 애플리케이션로직으로 처리하도록 하자.
+![Untitled 22](https://user-images.githubusercontent.com/52458039/151834335-e469e43f-af1f-4dff-9ec3-3dbf79d0b897.png)
+
+> 복잡한 조건을 가진 쿼리로 디비를 검색하면 안된다. 최소한의 필터링을 통해 가져온 데이터를 애플리케이션로직으로 처리하도록 하자.
 
 # 12. 상수, 문자 더하기
 
 상수가 필요하면 `Expressions.constant(xxx)` 사용한다.
 
 ```java
-Tuple result = queryFactory
+@Test
+public void constant() {
+    List<Tuple> result = queryFactory
             .select(member.username, Expressions.constant("A"))
             .from(member)
-            .fetchFirst();
+            .fetch();
+
+    for (Tuple tuple : result) {
+        System.out.println("tuple = " + tuple);
+    }
+}
 ```
 
-문자 더하기 concat
+![Untitled 23](https://user-images.githubusercontent.com/52458039/151834381-e89f2611-4803-43ca-843e-f463fb291f8e.png)
+
+→ JPQL에서 상수에 대한 조회 쿼리가 나가지 않는다.
+
+**문자 더하기 → concat**
 
 ```java
-String result = queryFactory
+@Test
+public void concat() {
+    // {username}_{age}
+    List<String> result = queryFactory
             .select(member.username.concat("_").concat(member.age.stringValue()))
             .from(member)
             .where(member.username.eq("member1"))
-            .fetchOne();
+            .fetch();
+
+    for (String s : result) {
+        System.out.println("s = " + s);
+    }
+}
 ```
 
-⇒ member1_10
+![Untitled 24](https://user-images.githubusercontent.com/52458039/151834418-f40e7dc8-529f-4070-99db-214331ce0d66.png)
 
 > 참고: `member.age.stringValue()` 부분이 중요한데, 문자가 아닌 다른 타입들은 `stringValue()` 로 문자로 변환할 수 있다. 이 방법은 ENUM을 처리할 때도 자주 사용한다.
+
+> 결과가 member1_10이 안나오고, member1_1이 나오고 있는데, H2 2.0.202(2021-11-25) 부터 char타입 기본 길이가 1로 고정되어 `cast(10 as char)`가 1로 반환되어 10에서 0이 짤린 1이 나옴. https://github.com/h2database/h2database/issues/2266
