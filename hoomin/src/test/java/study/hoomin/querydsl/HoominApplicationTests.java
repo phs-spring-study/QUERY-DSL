@@ -284,4 +284,32 @@ class HoominApplicationTests {
 		assertThat(result).extracting("age")
 			.containsExactly(40);
 	}
+
+	@Test
+	public void simpleProjection() {
+		final List<String> fetch = queryFactory
+			.select(member.username)
+			.from(member)
+			.fetch();
+
+		final List<Member> fetch1 = queryFactory
+			.select(member)
+			.from(member)
+			.fetch();
+	}
+
+	@Test
+	public void tupleProjection() {
+		final List<Tuple> fetch = queryFactory
+			.select(member.username, member.age)
+			.from(member)
+			.fetch();
+
+		for (Tuple tuple : fetch) {
+			final String s = tuple.get(member.username);
+			final Integer s2 = tuple.get(member.age);
+		}
+	}
+
+
 }

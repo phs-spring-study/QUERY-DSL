@@ -36,3 +36,12 @@
 
 ## 상수
 - .stringValue()는 enum 처리할때 자주 사용
+
+# 중급 문법
+
+## 프로젝션과 결과 반환
+
+- 프로젝션: select하는 대상을 지정
+- 2개 이상 select하려면 tuple이나 dto 사용
+- tuple은(com.querydsl.core 패키지 등) repository계층 넘어서 service나 controller에서 사용하는건 비추
+  - 핵심 비즈니스, 서비스 로직에서 jpa를 사용한다는걸 알지 못해야 좋다.
