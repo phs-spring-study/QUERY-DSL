@@ -56,4 +56,8 @@
     - repository에서 조회한 dto를 일반적으로 service, controller, api 반환에서 사용(?!)하는데 querydsl 의존성이 생긴다.
       - tuple은 repository에서만(하부 구현기술을 앞단이 알면 좋지 않다.), repository에서 조회한 dto는 일반적으로 service, controller에서 사용
       - 어떻게 결정할지 생각해보기
+
+## 동적 쿼리
+
+- BooleanBuilder
   

@@ -5,6 +5,7 @@ import static study.hoomin.querydsl.entity.QMember.*;
 import static study.hoomin.querydsl.entity.QTeam.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
@@ -369,6 +371,28 @@ class HoominApplicationTests {
 		final List<MemberDto> fetch = queryFactory
 			.select(new QMemberDto(member.username, member.age)) // 생성자 실제 호출
 			.from(member)
+			.fetch();
+	}
+
+	@Test
+	public void dynamicQuery_BooleanBuilder() {
+		String usernameParam = "member1"; // null일 수 있음
+		Integer ageParam = 10; // null일 수 있음
+
+		List<Member> result = searchMember1(usernameParam, ageParam);
+	}
+
+	private List<Member> searchMember1(String usernameCond, Integer ageCond) {
+		final BooleanBuilder builder = new BooleanBuilder();
+		builder.and(Optional.ofNullable(usernameCond).map(member.username::eq).orElse(null));
+		// Optional.ofNullable(ageCond).ifPresent(integer -> builder.and(member.age.eq(integer)));
+		if (ageCond != null) {
+			builder.and(member.age.eq(ageCond));
+		}
+
+		return queryFactory
+			.selectFrom(member)
+			.where(builder)
 			.fetch();
 	}
 }
