@@ -6,6 +6,7 @@ import static study.hoomin.querydsl.entity.QTeam.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -21,7 +22,9 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
@@ -394,5 +397,40 @@ class HoominApplicationTests {
 			.selectFrom(member)
 			.where(builder)
 			.fetch();
+	}
+
+	@Test
+	public void dynamicQuery_WhereParam() {
+		String usernameParam = "member1"; // null일 수 있음
+		Integer ageParam = 10; // null일 수 있음
+
+		List<Member> result = searchMember2(usernameParam, ageParam);
+	}
+
+	private List<Member> searchMember2(String usernameCond, Integer ageCond) {
+		return queryFactory
+			.selectFrom(member)
+			.where(usernameEq(usernameCond), ageEq(ageCond))
+			.fetch();
+	}
+
+	private BooleanExpression usernameEq(String usernameCond) {
+		return usernameCond != null ? member.username.eq(usernameCond) : null;
+	}
+
+	private Predicate ageEq(Integer ageCond) {
+		return ageCond != null ? member.age.eq(ageCond) : null;
+	}
+
+	private BooleanBuilder ageEq2(Integer ageCond) {
+		return nullSafeBuilder(() -> member.age.eq(ageCond));
+	}
+
+	public static BooleanBuilder nullSafeBuilder(Supplier<BooleanExpression> f) {
+		try {
+			return new BooleanBuilder(f.get());
+		} catch (IllegalArgumentException e) {
+			return new BooleanBuilder();
+		}
 	}
 }

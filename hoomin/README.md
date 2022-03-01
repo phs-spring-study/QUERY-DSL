@@ -60,4 +60,16 @@
 ## 동적 쿼리
 
 - BooleanBuilder
-  
+  - BooleanBuilder를 where에 사용
+- Where 다중 파라미터 (추천)
+  - where에 null이 들어가도 무시된다.
+  - where 조건을 의미있는 method로(서비스가능한지 체크하는 메소드 등) 빼서 재사용도 가능하다
+  ```
+  public static BooleanBuilder nullSafeBuilder(Supplier<BooleanExpression> f) {
+    try {
+        return new BooleanBuilder(f.get());
+    } catch (IllegalArgumentException e) {
+        return new BooleanBuilder();
+    }
+  }
+  ```
