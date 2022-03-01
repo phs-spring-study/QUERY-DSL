@@ -24,6 +24,7 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import study.hoomin.querydsl.dto.MemberDto;
+import study.hoomin.querydsl.dto.QMemberDto;
 import study.hoomin.querydsl.entity.Member;
 import study.hoomin.querydsl.entity.QMember;
 import study.hoomin.querydsl.entity.QTeam;
@@ -359,6 +360,14 @@ class HoominApplicationTests {
 			.select(Projections.constructor(MemberDto.class,
 				member.username,
 				member.age))
+			.from(member)
+			.fetch();
+	}
+
+	@Test
+	public void findDtoByQueryProjection() {
+		final List<MemberDto> fetch = queryFactory
+			.select(new QMemberDto(member.username, member.age)) // 생성자 실제 호출
 			.from(member)
 			.fetch();
 	}

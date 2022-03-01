@@ -49,3 +49,11 @@
   - 프로퍼티 접근
   - 필드 직접 접근
   - 생성자 사용
+  - @QueryProjection 사용 (추천)
+    - 컴파일시점에도 에러 가능
+    - Q파일을 생성해야 한다.
+    - dto에서 querydsl 의존성이 생긴다.
+    - repository에서 조회한 dto를 일반적으로 service, controller, api 반환에서 사용(?!)하는데 querydsl 의존성이 생긴다.
+      - tuple은 repository에서만(하부 구현기술을 앞단이 알면 좋지 않다.), repository에서 조회한 dto는 일반적으로 service, controller에서 사용
+      - 어떻게 결정할지 생각해보기
+  
