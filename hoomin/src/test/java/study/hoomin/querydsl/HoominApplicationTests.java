@@ -18,9 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
+import study.hoomin.querydsl.dto.MemberDto;
 import study.hoomin.querydsl.entity.Member;
 import study.hoomin.querydsl.entity.QMember;
 import study.hoomin.querydsl.entity.QTeam;
@@ -311,5 +314,52 @@ class HoominApplicationTests {
 		}
 	}
 
+	@Test
+	public void findDtoByJPQL() {
+		final List<MemberDto> resultList = em.createQuery(
+			"select new study.hoomin.querydsl.dto.MemberDto(m.username, m.age) from Member  m", MemberDto.class)
+			.getResultList();
+	}
 
+	@Test
+	public void findDtoBySetter() {
+		final List<MemberDto> fetch = queryFactory
+			.select(Projections.bean(MemberDto.class,
+				member.username,
+				member.age))
+			.from(member)
+			.fetch();
+	}
+
+	@Test
+	public void findDtoByField() {
+		final List<MemberDto> fetch = queryFactory
+			.select(Projections.fields(MemberDto.class,
+				member.username.as("userName"),
+				member.age))
+			.from(member)
+			.fetch();
+
+		QMember memberSub = new QMember("memberSub");
+
+		final List<MemberDto> fetch2 = queryFactory
+			.select(Projections.fields(MemberDto.class,
+				member.username.as("userName"),
+				ExpressionUtils.as(
+					JPAExpressions.select(memberSub.age.max())
+						.from(memberSub), "age")
+				)
+			).from(member)
+			.fetch();
+	}
+
+	@Test
+	public void findDtoByConstructor() {
+		final List<MemberDto> fetch = queryFactory
+			.select(Projections.constructor(MemberDto.class,
+				member.username,
+				member.age))
+			.from(member)
+			.fetch();
+	}
 }

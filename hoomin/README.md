@@ -45,3 +45,7 @@
 - 2개 이상 select하려면 tuple이나 dto 사용
 - tuple은(com.querydsl.core 패키지 등) repository계층 넘어서 service나 controller에서 사용하는건 비추
   - 핵심 비즈니스, 서비스 로직에서 jpa를 사용한다는걸 알지 못해야 좋다.
+- DTO 반환
+  - 프로퍼티 접근
+  - 필드 직접 접근
+  - 생성자 사용
