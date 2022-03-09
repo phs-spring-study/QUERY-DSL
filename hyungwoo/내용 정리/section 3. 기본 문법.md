@@ -965,6 +965,6 @@ public void concat() {
 
 ![Untitled 24](https://user-images.githubusercontent.com/52458039/151834418-f40e7dc8-529f-4070-99db-214331ce0d66.png)
 
-> 참고: `member.age.stringValue()` 부분이 중요한데, 문자가 아닌 다른 타입들은 `stringValue()` 로 문자로 변환할 수 있다. 이 방법은 ENUM을 처리할 때도 자주 사용한다.
+> 참고: `member.age.stringValue()` 부분이 중요한데, 문자가  아닌 다른 타입들은 `stringValue()` 로 문자로 변환할 수 있다. 이 방법은 ENUM을 처리할 때도 자주 사용한다.
 
 > 결과가 member1_10이 안나오고, member1_1이 나오고 있는데, H2 2.0.202(2021-11-25) 부터 char타입 기본 길이가 1로 고정되어 `cast(10 as char)`가 1로 반환되어 10에서 0이 짤린 1이 나옴. https://github.com/h2database/h2database/issues/2266
