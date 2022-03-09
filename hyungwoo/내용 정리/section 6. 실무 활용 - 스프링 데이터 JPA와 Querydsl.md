@@ -283,7 +283,9 @@ public Page<MemberTeamDto> searchPageSimple(MemberSearchCondition condition, Pag
 > 
 
 > 참고 : fetchResults는 현재 deprecated 되었음. 그래서 카운트 쿼리를 따로 날려주는걸 권장함. 위의 경우라면 fetch를 사용하여 List를 가져오고, 그 List의 size() 메서드를 사용하여 PageImpl의 인자로 넘겨주면 된다.
-> 
+
+> 참고 : `select count(*)`를 사용하고 싶다면 `select(Wildcard.count)`를 사용하면 된다.
+
 
 ## 2. 데이터 내용과 전체 카운트를 별도로 조회하는 방법
 
