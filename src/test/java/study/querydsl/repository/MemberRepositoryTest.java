@@ -99,6 +99,7 @@ class MemberRepositoryTest {
         em.persist(member3);
         em.persist(member4);
 
+
         QMember member = QMember.member;
         Iterable findMember = memberRepository.findAll(
                 member.age.between(10, 40)
